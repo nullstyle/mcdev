@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/go-fsnotify/fsnotify"
 )
@@ -13,44 +14,52 @@ import (
 // Watcher watches for go package changes underneath a directory and emits
 // their names as go files within them change
 type Watcher struct {
-	dir     string
-	fs      *fsnotify.Watcher
-	changes chan string
-	done    chan bool
-	dirs    map[string]bool
+	Dir      string
+	Debounce time.Duration
+	inited   bool
+	fs       *fsnotify.Watcher
+	changes  chan string
+	done     chan bool
+	pending  map[string]bool
 }
 
-// NewWatcher created a new package watcher under the provided dir
-func NewWatcher(dir string) (*Watcher, error) {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return nil, err
+// Init ensures the internal state of the watcher is properly initialized
+func (w *Watcher) Init() (err error) {
+	if w.inited {
+		return nil
 	}
 
-	stat, err := os.Stat(dir)
-
+	w.fs, err = fsnotify.NewWatcher()
 	if err != nil {
-		return nil, err
+		return
+	}
+
+	stat, err := os.Stat(w.Dir)
+	if err != nil {
+		return
 	}
 
 	if !stat.IsDir() {
-		return nil, fmt.Errorf("%s is not a directory", dir)
+		err = fmt.Errorf("%s is not a directory", w.Dir)
+		return
 	}
 
-	return &Watcher{
-		dir,
-		watcher,
-		make(chan string, 10),
-		make(chan bool, 1),
-		map[string]bool{},
-	}, nil
+	w.changes = make(chan string, 100)
+	w.done = make(chan bool, 1)
+	w.pending = make(map[string]bool)
+	w.inited = true
+	return
 }
 
 // Run runs the watcher, continually pushing events from the fs watcher to
 // the changes channel.
 func (w *Watcher) Run() error {
+	if err := w.Init(); err != nil {
+		return err
+	}
+
 	// initialize the watchlist
-	err := filepath.Walk(w.dir, func(path string, stat os.FileInfo, err error) error {
+	err := filepath.Walk(w.Dir, func(path string, stat os.FileInfo, err error) error {
 
 		if err != nil {
 			log.Fatal(err)
@@ -87,7 +96,9 @@ func (w *Watcher) Run() error {
 				if err != nil {
 					log.Fatal(err)
 				}
-			case _ = <-w.done:
+			case <-time.After(w.Debounce):
+				w.emit()
+			case <-w.done:
 				close(w.changes)
 				log.Println("closed package watcher")
 				return
@@ -142,7 +153,7 @@ func (w *Watcher) processGoEvent(event fsnotify.Event) error {
 		return nil
 	}
 
-	w.changes <- pkg
+	w.addPending(pkg)
 	return nil
 }
 
@@ -183,4 +194,15 @@ func (w *Watcher) findPackage(dir string) (string, bool) {
 	}
 
 	return dir[len(srcRoot)+1:], true
+}
+
+func (w *Watcher) emit() {
+	for pkg := range w.pending {
+		w.changes <- pkg
+	}
+	w.pending = make(map[string]bool)
+}
+
+func (w *Watcher) addPending(pkg string) {
+	w.pending[pkg] = true
 }

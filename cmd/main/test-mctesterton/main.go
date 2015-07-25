@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/nullstyle/testy-mctesterton/pkgwatch"
 )
@@ -11,19 +12,22 @@ import (
 var done = make(chan os.Signal, 1)
 
 func main() {
+	signal.Notify(done, os.Interrupt, os.Kill)
+
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	watcher, err := pkgwatch.NewWatcher(dir)
-	if err != nil {
+	watcher := &pkgwatch.Watcher{
+		Dir:      dir,
+		Debounce: 300 * time.Millisecond,
+	}
+
+	if err := watcher.Run(); err != nil {
 		log.Fatal(err)
 	}
 	defer watcher.Close()
-
-	signal.Notify(done, os.Interrupt, os.Kill)
-	watcher.Run()
 
 	log.Println("waiting for changes")
 
