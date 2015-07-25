@@ -1,0 +1,14 @@
+{
+	"ImportPath": "github.com/nullstyle/testy-mctesterton",
+	"GoVersion": "devel",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/go-fsnotify/fsnotify",
+			"Comment": "v1.2.0-1-g6549b98",
+			"Rev": "6549b98005f3e4026ad9f50ef7d5011f40ba1397"
+		}
+	]
+}
