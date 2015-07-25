@@ -1,9 +1,14 @@
 package main
 
 import (
+	"bytes"
+	"flag"
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
+	"strings"
+	"text/template"
 	"time"
 
 	"github.com/nullstyle/testy-mctesterton/pkgwatch"
@@ -11,9 +16,19 @@ import (
 )
 
 var done = make(chan os.Signal, 1)
+var cmdStr = flag.String("c", "", "command line to execute upon package source change")
+var cmdTmpl *template.Template
 
 func main() {
+	var err error
+
+	flag.Parse()
 	signal.Notify(done, os.Interrupt, os.Kill)
+
+	cmdTmpl, err = template.New("cmd").Parse(*cmdStr)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	dir, err := os.Getwd()
 	if err != nil {
@@ -26,12 +41,7 @@ func main() {
 	}
 
 	worker := &pkgwork.Worker{
-		Fn: func(pkg string) error {
-			log.Printf("working on %s", pkg)
-			<-time.After(30 * time.Second)
-			log.Printf("finished with %s", pkg)
-			return nil
-		},
+		Fn:       execute,
 		Cooldown: 5 * time.Second,
 	}
 
@@ -55,4 +65,20 @@ func main() {
 			os.Exit(0)
 		}
 	}
+}
+
+func execute(pkg string) error {
+	var cmdBuf bytes.Buffer
+	err := cmdTmpl.Execute(&cmdBuf, struct{ Pkg string }{pkg})
+	if err != nil {
+		return err
+	}
+
+	full := cmdBuf.String()
+	split := strings.Split(full, " ")
+	cmd := exec.Command(split[0], split[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
 }
