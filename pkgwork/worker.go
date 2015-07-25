@@ -35,20 +35,25 @@ func (w *Worker) Run(pkg string) error {
 	}
 
 	defer w.finish(pkg)
-	log.Printf("starting work on %s", pkg)
 
-	err := w.Fn(pkg)
+	err := w.run(pkg)
 	if err != nil {
 		return err
 	}
 
 	for w.shouldRunAgain(pkg) {
-		err := w.Fn(pkg)
+		err := w.run(pkg)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (w *Worker) run(pkg string) error {
+	log.Printf("starting: %s", pkg)
+	defer log.Printf("done: %s", pkg)
+	return w.Fn(pkg)
 }
 
 func (w *Worker) finish(pkg string) {
