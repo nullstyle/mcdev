@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/nullstyle/testy-mctesterton/pkgwatch"
+	"github.com/nullstyle/testy-mctesterton/pkgwork"
 )
 
 var done = make(chan os.Signal, 1)
@@ -24,6 +25,16 @@ func main() {
 		Debounce: 300 * time.Millisecond,
 	}
 
+	worker := &pkgwork.Worker{
+		Fn: func(pkg string) error {
+			log.Printf("working on %s", pkg)
+			<-time.After(30 * time.Second)
+			log.Printf("finished with %s", pkg)
+			return nil
+		},
+		Cooldown: 5 * time.Second,
+	}
+
 	if err := watcher.Run(); err != nil {
 		log.Fatal(err)
 	}
@@ -34,7 +45,11 @@ func main() {
 	for {
 		select {
 		case pkg := <-watcher.Changes():
-			log.Printf("changed: %s", pkg)
+			go func() {
+				if err := worker.Run(pkg); err != nil {
+					log.Fatal(err)
+				}
+			}()
 		case _ = <-done:
 			log.Println("shutting down")
 			os.Exit(0)
