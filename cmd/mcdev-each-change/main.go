@@ -26,9 +26,9 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/nullstyle/testy-mctesterton/cmdtmpl"
-	"github.com/nullstyle/testy-mctesterton/pkgwatch"
-	"github.com/nullstyle/testy-mctesterton/pkgwork"
+	"github.com/nullstyle/mcdev/cmdtmpl"
+	"github.com/nullstyle/mcdev/pkgwatch"
+	"github.com/nullstyle/mcdev/pkgwork"
 )
 
 var done = make(chan os.Signal, 1)
