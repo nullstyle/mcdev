@@ -19,22 +19,21 @@ package main
 //
 
 import (
-	"bytes"
 	"flag"
 	"log"
 	"os"
 	"os/exec"
 	"os/signal"
-	"text/template"
 	"time"
 
+	"github.com/nullstyle/testy-mctesterton/cmdtmpl"
 	"github.com/nullstyle/testy-mctesterton/pkgwatch"
 	"github.com/nullstyle/testy-mctesterton/pkgwork"
 )
 
 var done = make(chan os.Signal, 1)
 
-var cmdTmpls []*template.Template
+var cmd *cmdtmpl.Command
 
 var debounce = flag.Duration("debounce", 500*time.Millisecond, "how long to debounce package changes")
 var cooldown = flag.Duration("cooldown", 4*time.Second, "how long to cooldown each command execution")
@@ -45,12 +44,9 @@ func main() {
 	flag.Parse()
 	signal.Notify(done, os.Interrupt, os.Kill)
 
-	for _, arg := range flag.Args() {
-		t, err := template.New("cmd").Parse(arg)
-		if err != nil {
-			log.Fatal(err)
-		}
-		cmdTmpls = append(cmdTmpls, t)
+	cmd, err = cmdtmpl.NewCommand(flag.Args())
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	dir, err := os.Getwd()
@@ -91,21 +87,16 @@ func main() {
 }
 
 func execute(pkg string) error {
-
-	args := make([]string, len(cmdTmpls))
-	for i, t := range cmdTmpls {
-		var buf bytes.Buffer
-
-		err := t.Execute(&buf, struct{ Pkg string }{pkg})
-		if err != nil {
-			return err
-		}
-		args[i] = buf.String()
+	err := cmd.Run(pkg)
+	if err == nil {
+		return nil
 	}
 
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	eerr, ok := err.(*exec.ExitError)
+	if !ok {
+		return err
+	}
 
-	return cmd.Run()
+	log.Println(eerr)
+	return nil
 }
