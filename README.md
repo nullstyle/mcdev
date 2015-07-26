@@ -15,7 +15,7 @@ go get github.com/nullstyle/mcdev/cmd/...
 
 ### Run a package's test everytime one if its .go files change
 ```
-mcdev-each-change -cmd='go test {{.Pkg}}'
+mcdev-each-change go test {{.Pkg}}
 ```
 
 ### Stop and re-start the server any time a package underneath the pwd is changed

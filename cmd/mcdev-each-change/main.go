@@ -25,7 +25,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"strings"
 	"text/template"
 	"time"
 
@@ -35,8 +34,7 @@ import (
 
 var done = make(chan os.Signal, 1)
 
-var cmdStr = flag.String("cmd", "", "command line to execute upon package source change")
-var cmdTmpl *template.Template
+var cmdTmpls []*template.Template
 
 var debounce = flag.Duration("debounce", 500*time.Millisecond, "how long to debounce package changes")
 var cooldown = flag.Duration("cooldown", 4*time.Second, "how long to cooldown each command execution")
@@ -47,9 +45,12 @@ func main() {
 	flag.Parse()
 	signal.Notify(done, os.Interrupt, os.Kill)
 
-	cmdTmpl, err = template.New("cmd").Parse(*cmdStr)
-	if err != nil {
-		log.Fatal(err)
+	for _, arg := range flag.Args() {
+		t, err := template.New("cmd").Parse(arg)
+		if err != nil {
+			log.Fatal(err)
+		}
+		cmdTmpls = append(cmdTmpls, t)
 	}
 
 	dir, err := os.Getwd()
@@ -90,15 +91,19 @@ func main() {
 }
 
 func execute(pkg string) error {
-	var cmdBuf bytes.Buffer
-	err := cmdTmpl.Execute(&cmdBuf, struct{ Pkg string }{pkg})
-	if err != nil {
-		return err
+
+	args := make([]string, len(cmdTmpls))
+	for i, t := range cmdTmpls {
+		var buf bytes.Buffer
+
+		err := t.Execute(&buf, struct{ Pkg string }{pkg})
+		if err != nil {
+			return err
+		}
+		args[i] = buf.String()
 	}
 
-	full := cmdBuf.String()
-	split := strings.Split(full, " ")
-	cmd := exec.Command(split[0], split[1:]...)
+	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
