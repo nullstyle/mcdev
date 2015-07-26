@@ -19,7 +19,7 @@ mcdev-each-change go test {{.Pkg}}
 
 ### Stop and re-start the server any time a package underneath the pwd is changed
 ```
-mcdev-rerun examples/server.go
+mcdev-rerun go run examples/server.go
 ```
 
 ## Contributing
