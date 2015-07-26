@@ -1,5 +1,23 @@
 package main
 
+// mcdev-each-change is a tool to help your go development workflow.  It:
+//
+// - watches for .go files being changed underneath the current directory (recursively)
+// - executes the templated command (the `cmd` flag) each time a package is changed
+// - debounces executions by a configurable duration to allow for things like
+//   gofmt to run prior to kicking the command off.  This is the `debounce` flag
+// - provides a configurable cooldown for command executions to provide a
+//   maximum rate of churn.
+//
+// This tool was designed to support a TDD-based development workflow that
+// tests and re-installs a package everytime it is changed.  To do this, you would
+// run:
+//
+// 		mcdev-each-change -cmd="go test {{.Pkg}} && go install {{.Pkg}}"
+//
+// The command will run until interupted using ctrl+c
+//
+
 import (
 	"bytes"
 	"flag"
