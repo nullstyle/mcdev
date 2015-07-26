@@ -12,7 +12,7 @@ go get github.com/nullstyle/mcdev/cmd/...
 
 ## Usage
 
-### Run a package's test everytime one if its .go files change
+### Run a package's test everytime one of its .go files change
 ```
 mcdev-each-change go test {{.Pkg}}
 ```
