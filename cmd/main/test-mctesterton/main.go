@@ -16,8 +16,12 @@ import (
 )
 
 var done = make(chan os.Signal, 1)
-var cmdStr = flag.String("c", "", "command line to execute upon package source change")
+
+var cmdStr = flag.String("cmd", "", "command line to execute upon package source change")
 var cmdTmpl *template.Template
+
+var debounce = flag.Duration("debounce", 500*time.Millisecond, "how long to debounce package changes")
+var cooldown = flag.Duration("cooldown", 4*time.Second, "how long to cooldown each command execution")
 
 func main() {
 	var err error
@@ -37,12 +41,12 @@ func main() {
 
 	watcher := &pkgwatch.Watcher{
 		Dir:      dir,
-		Debounce: 300 * time.Millisecond,
+		Debounce: *debounce,
 	}
 
 	worker := &pkgwork.Worker{
 		Fn:       execute,
-		Cooldown: 5 * time.Second,
+		Cooldown: *cooldown,
 	}
 
 	if err := watcher.Run(); err != nil {
