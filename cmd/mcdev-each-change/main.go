@@ -3,7 +3,7 @@ package main
 // mcdev-each-change is a tool to help your go development workflow.  It:
 //
 // - watches for .go files being changed underneath the current directory (recursively)
-// - executes the templated command (the `cmd` flag) each time a package is changed
+// - executes the templated command each time a package is changed
 // - debounces executions by a configurable duration to allow for things like
 //   gofmt to run prior to kicking the command off.  This is the `debounce` flag
 // - provides a configurable cooldown for command executions to provide a
@@ -13,7 +13,7 @@ package main
 // tests and re-installs a package everytime it is changed.  To do this, you would
 // run:
 //
-// 		mcdev-each-change -cmd="go test {{.Pkg}} && go install {{.Pkg}}"
+// 		mcdev-each-change bash -c "go test {{.Pkg}} && go install {{.Pkg}}"
 //
 // The command will run until interupted using ctrl+c
 //
@@ -46,11 +46,13 @@ func main() {
 
 	cmd, err = cmdtmpl.NewCommand(flag.Args())
 	if err != nil {
+		log.Println("error when parsing command")
 		log.Fatal(err)
 	}
 
 	dir, err := os.Getwd()
 	if err != nil {
+		log.Println("error when getting working directory")
 		log.Fatal(err)
 	}
 
@@ -63,8 +65,8 @@ func main() {
 		Fn:       execute,
 		Cooldown: *cooldown,
 	}
-
 	if err := watcher.Run(); err != nil {
+		log.Println("error when starting watcher")
 		log.Fatal(err)
 	}
 	defer watcher.Close()
@@ -87,7 +89,7 @@ func main() {
 }
 
 func execute(pkg string) error {
-	err := cmd.Run(pkg)
+	err := cmd.Run(struct{ Pkg string }{pkg})
 	if err == nil {
 		return nil
 	}

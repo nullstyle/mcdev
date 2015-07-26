@@ -28,12 +28,12 @@ func NewCommand(args []string) (*Command, error) {
 	return result, nil
 }
 
-func (cmd *Command) Run(pkg string) error {
+func (cmd *Command) Run(ctx interface{}) error {
 	args := make([]string, len(cmd.Args))
 
 	for i, t := range cmd.Args {
 		var buf bytes.Buffer
-		err := t.Execute(&buf, struct{ Pkg string }{pkg})
+		err := t.Execute(&buf, ctx)
 		if err != nil {
 			return err
 		}
