@@ -13,7 +13,8 @@ type Worker struct {
 	sync.Mutex
 
 	inited  bool
-	running map[string]time.Time
+	started map[string]time.Time
+	running map[string]bool
 	again   map[string]bool
 }
 
@@ -22,7 +23,8 @@ func (w *Worker) Init() {
 		return
 	}
 
-	w.running = map[string]time.Time{}
+	w.started = map[string]time.Time{}
+	w.running = map[string]bool{}
 	w.again = map[string]bool{}
 	w.inited = true
 }
@@ -65,7 +67,7 @@ func (w *Worker) finish(pkg string) {
 
 func (w *Worker) shouldRunAgain(pkg string) bool {
 	w.Lock()
-	again, _ := w.again[pkg]
+	again := w.again[pkg]
 	w.again[pkg] = false
 	w.Unlock()
 	return again
@@ -74,21 +76,25 @@ func (w *Worker) shouldRunAgain(pkg string) bool {
 func (w *Worker) shouldStart(pkg string) bool {
 	w.Lock()
 
-	startedAt, alreadyRunning := w.running[pkg]
-	if alreadyRunning {
+	startedAt := w.started[pkg]
+	alreadyRunning := w.running[pkg]
+	coolEnough := time.Since(startedAt) > w.Cooldown
 
-		// If the cooldown has elapsed since the last start of the work for this
-		// pkg, requeue the pkg to run again after the current process is complete
-		if time.Since(startedAt) > w.Cooldown {
-			log.Printf("requeuing %s", pkg)
-			w.again[pkg] = true
-		}
+	if !coolEnough {
+		w.Unlock()
+		return false
+	}
+
+	if alreadyRunning {
+		log.Printf("requeue: %s", pkg)
+		w.again[pkg] = true
 
 		w.Unlock()
 		return false
 	}
 
-	w.running[pkg] = time.Now()
+	w.started[pkg] = time.Now()
+	w.running[pkg] = true
 	w.Unlock()
 	return true
 }
