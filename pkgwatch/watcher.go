@@ -124,8 +124,14 @@ func (w *Watcher) Changes() <-chan string {
 
 // AddPath adds a new directory to the watched list of directories
 func (w *Watcher) AddPath(path string) error {
+	base := filepath.Base(path)
+	// we don't watch hidden dirs
+	if base[0] == '.' {
+		return filepath.SkipDir
+	}
+
 	// we don't watch vendored code for modifications (TODO: add a flag to enable/disable this)
-	if filepath.Base(path) == "vendor" {
+	if base == "vendor" {
 		return filepath.SkipDir
 	}
 
