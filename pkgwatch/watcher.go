@@ -150,7 +150,6 @@ func (w *Watcher) processGoEvent(event fsnotify.Event) error {
 	if filepath.Ext(goPath) != ".go" {
 		return nil
 	}
-
 	dir := filepath.Dir(goPath)
 	pkg, found := w.findPackage(dir)
 
@@ -203,6 +202,10 @@ func (w *Watcher) findPackage(dir string) (string, bool) {
 }
 
 func (w *Watcher) emit() {
+	if len(w.pending) == 0 {
+		return
+	}
+
 	for pkg := range w.pending {
 		w.changes <- pkg
 	}
