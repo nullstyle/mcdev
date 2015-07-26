@@ -28,14 +28,14 @@ func NewCommand(args []string) (*Command, error) {
 	return result, nil
 }
 
-func (cmd *Command) Run(ctx interface{}) error {
+func (cmd *Command) Make(ctx interface{}) (*exec.Cmd, error) {
 	args := make([]string, len(cmd.Args))
 
 	for i, t := range cmd.Args {
 		var buf bytes.Buffer
 		err := t.Execute(&buf, ctx)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		args[i] = buf.String()
 	}
@@ -43,6 +43,13 @@ func (cmd *Command) Run(ctx interface{}) error {
 	proc := exec.Command(cmd.Cmd, args...)
 	proc.Stdout = os.Stdout
 	proc.Stderr = os.Stderr
+	return proc, nil
+}
 
+func (cmd *Command) Run(ctx interface{}) error {
+	proc, err := cmd.Make(ctx)
+	if err != nil {
+		return err
+	}
 	return proc.Run()
 }
