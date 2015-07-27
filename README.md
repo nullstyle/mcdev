@@ -22,6 +22,17 @@ mcdev-each-change go test {{.Pkg}}
 mcdev-rerun go run examples/server.go
 ```
 
+### gb mode
+
+The `pkgwatch` package converts notifications of changed files into
+notifications of changed go packages.  Normally, this is done by searching the
+GOPATH for parents of the file that was changed.  This doesn't play well with
+the [gb tool](http://getgb.io/).
+
+Instead, we provide a "gb mode" for the pkgwatch package, enabled by setting the
+`-gb` flag on the command line.  When enabled and the tools are run from a gb
+project root, the correct package changes will be detected.
+
 ## Contributing
 
 1. Fork it

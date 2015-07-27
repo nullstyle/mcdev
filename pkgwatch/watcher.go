@@ -1,6 +1,7 @@
 package pkgwatch
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -11,16 +12,19 @@ import (
 	"github.com/go-fsnotify/fsnotify"
 )
 
+var isGB = flag.Bool("gb", false, "determine changed packages using the gb build tool's project layout")
+
 // Watcher watches for go package changes underneath a directory and emits
 // their names as go files within them change
 type Watcher struct {
 	Dir      string
 	Debounce time.Duration
-	inited   bool
-	fs       *fsnotify.Watcher
-	changes  chan string
-	done     chan bool
-	pending  map[string]bool
+
+	inited  bool
+	fs      *fsnotify.Watcher
+	changes chan string
+	done    chan bool
+	pending map[string]bool
 }
 
 // Init ensures the internal state of the watcher is properly initialized
@@ -180,14 +184,21 @@ func (w *Watcher) processDirEvent(event fsnotify.Event) error {
 }
 
 func (w *Watcher) findPackage(dir string) (string, bool) {
-	gopath, found := isOnGoPath(dir)
+	var foundRoot string
 
-	if !found {
-		log.Printf("warn: changed file was not found on a local gopath. ignoring...")
-		return "", false
+	if *isGB {
+		foundRoot = w.Dir
+	} else {
+		var foundOnGoPath bool
+		foundRoot, foundOnGoPath = isOnGoPath(dir)
+
+		if !foundOnGoPath {
+			log.Printf("warn: changed file was not found on a local gopath. ignoring...")
+			return "", false
+		}
 	}
 
-	srcRoot := filepath.Join(gopath, "src")
+	srcRoot := filepath.Join(foundRoot, "src")
 
 	// ASSERT: the changed directory is underneath the found gopath entry's "src"
 	// directory
