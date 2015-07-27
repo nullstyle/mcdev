@@ -3,10 +3,13 @@ package cmdtmpl
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"os/exec"
 	"text/template"
 )
+
+var ErrInvalidCommand = errors.New("invalid command")
 
 type Command struct {
 	Cmd  string
@@ -15,6 +18,11 @@ type Command struct {
 
 func NewCommand(args []string) (*Command, error) {
 	result := new(Command)
+
+	if len(args) == 0 {
+		return nil, ErrInvalidCommand
+	}
+
 	result.Cmd = args[0]
 	result.Args = make([]*template.Template, len(args)-1)
 
