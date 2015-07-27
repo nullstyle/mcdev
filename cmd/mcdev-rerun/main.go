@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/nullstyle/mcdev/cmdtmpl"
+	"github.com/nullstyle/mcdev/dotenv"
 	"github.com/nullstyle/mcdev/pkgwatch"
 	"github.com/nullstyle/mcdev/rerun"
 )
@@ -45,6 +46,11 @@ func main() {
 
 	flag.Parse()
 	signal.Notify(sigs, os.Interrupt, os.Kill)
+
+	err = dotenv.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	cmd, err = cmdtmpl.NewCommand(flag.Args())
 	if err != nil {
