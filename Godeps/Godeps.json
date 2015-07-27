@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/nullstyle/testy-mctesterton",
+	"ImportPath": "github.com/nullstyle/mcdev",
 	"GoVersion": "devel",
 	"Packages": [
 		"./..."
@@ -9,6 +9,16 @@
 			"ImportPath": "github.com/go-fsnotify/fsnotify",
 			"Comment": "v1.2.0-1-g6549b98",
 			"Rev": "6549b98005f3e4026ad9f50ef7d5011f40ba1397"
+		},
+		{
+			"ImportPath": "github.com/onsi/ginkgo",
+			"Comment": "v1.2.0-8-g25380c6",
+			"Rev": "25380c62e61d3f90436be125b8127dbae578fdef"
+		},
+		{
+			"ImportPath": "github.com/onsi/gomega",
+			"Comment": "v1.0-50-gd6c945f",
+			"Rev": "d6c945f9fdbf6cad99e85b0feff591caa268e0db"
 		}
 	]
 }
