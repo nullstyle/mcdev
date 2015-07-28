@@ -93,9 +93,10 @@ func (r *Runner) run() {
 
 func (r *Runner) shuttingDown() {
 	r.finishing = true
+	r.stop()
 	select {
 	case err := <-r.exit:
-		log.Println(err)
+		r.finishProcess(err)
 		r.finished = true
 		log.Println("shutdown complete")
 	case <-time.After(10 * time.Second):
@@ -146,6 +147,5 @@ func (r *Runner) start() {
 	go func() {
 		log.Println("starting service")
 		r.exit <- r.current.Run()
-		log.Println("service stopped")
 	}()
 }
