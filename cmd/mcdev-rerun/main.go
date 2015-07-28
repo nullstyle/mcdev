@@ -31,6 +31,8 @@ import (
 	"github.com/nullstyle/mcdev/dotenv"
 	"github.com/nullstyle/mcdev/pkgwatch"
 	"github.com/nullstyle/mcdev/rerun"
+
+	c "github.com/nullstyle/mcdev/cmd"
 )
 
 var debounce = flag.Duration("debounce", 1*time.Second, "how long to debounce package changes")
@@ -68,6 +70,7 @@ func main() {
 	watcher := &pkgwatch.Watcher{
 		Dir:      dir,
 		Debounce: *debounce,
+		IsGB:     *c.IsGB,
 	}
 
 	if err := watcher.Run(); err != nil {

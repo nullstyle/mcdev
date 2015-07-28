@@ -30,6 +30,8 @@ import (
 	"github.com/nullstyle/mcdev/dotenv"
 	"github.com/nullstyle/mcdev/pkgwatch"
 	"github.com/nullstyle/mcdev/pkgwork"
+
+	c "github.com/nullstyle/mcdev/cmd"
 )
 
 var done = make(chan os.Signal, 1)
@@ -61,6 +63,7 @@ func main() {
 	watcher := &pkgwatch.Watcher{
 		Dir:      dir,
 		Debounce: *debounce,
+		IsGB:     *c.IsGB,
 	}
 
 	worker := &pkgwork.Worker{
