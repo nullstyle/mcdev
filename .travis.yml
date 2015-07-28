@@ -1,5 +1,5 @@
 language: go
-script: go test ./...
+script: go test $(go list ./... | grep -v /vendor/)
 go:
   - 1.5beta2
   - tip
