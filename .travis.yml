@@ -3,3 +3,5 @@ script: go test ./...
 go:
   - 1.5beta2
   - tip
+env:
+  - GO15VENDOREXPERIMENT=1
