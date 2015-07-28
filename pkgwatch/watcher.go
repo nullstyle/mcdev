@@ -62,8 +62,13 @@ func (w *Watcher) Run() error {
 		return err
 	}
 
+	baseDir := w.Dir
+	if *isGB {
+		baseDir = filepath.Join(baseDir, "src")
+	}
+
 	// initialize the watchlist
-	err := filepath.Walk(w.Dir, func(path string, stat os.FileInfo, err error) error {
+	err := filepath.Walk(baseDir, func(path string, stat os.FileInfo, err error) error {
 
 		if err != nil {
 			log.Fatal(err)
