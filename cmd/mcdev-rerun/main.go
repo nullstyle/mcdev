@@ -45,12 +45,8 @@ func main() {
 	var err error
 
 	flag.Parse()
+	dotenv.Load()
 	signal.Notify(sigs, os.Interrupt, os.Kill)
-
-	err = dotenv.Load()
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	cmd, err = cmdtmpl.NewCommand(flag.Args())
 	if err != nil {

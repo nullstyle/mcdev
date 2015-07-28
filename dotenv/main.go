@@ -2,6 +2,7 @@ package dotenv
 
 import (
 	"flag"
+	"log"
 
 	"github.com/joho/godotenv"
 )
@@ -10,10 +11,12 @@ var env = flag.Bool("env", true, "load environment using .env files")
 
 // Load loads the current directory's .env file into the current process
 // provided the `env` flag is true.
-func Load() error {
+func Load() {
 	if !*env {
-		return nil
+		return
 	}
 
-	return godotenv.Load()
+	if err := godotenv.Load(); err != nil {
+		log.Printf("warn: %v", err)
+	}
 }
