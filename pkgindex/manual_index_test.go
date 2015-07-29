@@ -1,8 +1,6 @@
 package pkgindex
 
 import (
-	"math/rand"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -17,8 +15,17 @@ var _ = Describe("ManualIndex", func() {
 	Describe("Add", func() {
 		It("adds all the provided packages to the indexes internal array", func() {
 			subject.Add("a", "b")
-			Expect(subject.packages).To(ContainElement("a"))
-			Expect(subject.packages).To(ContainElement("b"))
+			Expect(subject.packages).To(HaveKey("a"))
+			Expect(subject.packages).To(HaveKey("b"))
+		})
+
+		It("doesn't add duplicates", func() {
+			subject.Add("a")
+			subject.Add("a")
+			Expect(subject.packages).To(HaveLen(1))
+			subject.packages = nil
+			subject.Add("a", "a")
+			Expect(subject.packages).To(HaveLen(1))
 		})
 	})
 
@@ -81,73 +88,61 @@ var _ = Describe("ManualIndex", func() {
 				Expect(results).To(HaveLen(1))
 				Expect(results).To(ContainElement("golang.org/x/net/context"))
 			})
-
-			Measure("search time", func(b Benchmarker) {
-				_ = b.Time("runtime", func() {
-					_, err := subject.Search("golang")
-					Expect(err).To(BeNil())
-				})
-
-				// Expect(runtime.Seconds()).To(BeNumerically("<", 0.1))
-
-			}, 1000)
 		})
 
-		indexWithRandomPackages := func(n int) *ManualIndex {
-			letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-			packages := make([]string, n)
-
-			for i := 0; i < n; i++ {
-				pkgLength := rand.Intn(9) + 1
-				pkg := make([]rune, pkgLength)
-				for i := range pkg {
-					pkg[i] = letters[rand.Intn(len(letters))]
-				}
-				packages[i] = "github.org/" + string(pkg)
-			}
-
-			result := &ManualIndex{}
-			err := result.Add(packages...)
-			if err != nil {
-				panic(err)
-			}
-			return result
-		}
-
-		measureSearches := func(subject *ManualIndex) {
-			Measure("empty search", func(b Benchmarker) {
-				b.Time("runtime", func() {
-					_, err := subject.Search("")
-					Expect(err).To(BeNil())
-				})
-			}, 1000)
-
-			Measure("query with many matches", func(b Benchmarker) {
-				b.Time("runtime", func() {
-					_, err := subject.Search("github.org")
-					Expect(err).To(BeNil())
-				})
-			}, 1000)
-
-			Measure("query with fewer matches", func(b Benchmarker) {
-				b.Time("runtime", func() {
-					_, err := subject.Search("github.org/aa")
-					Expect(err).To(BeNil())
-				})
-			}, 1000)
-		}
-
-		Context("with 100 entries", func() {
-			measureSearches(indexWithRandomPackages(100))
-		})
-
-		Context("with 1000 entries", func() {
-			measureSearches(indexWithRandomPackages(1000))
-		})
-
-		Context("with 10000 entries", func() {
-			measureSearches(indexWithRandomPackages(10000))
-		})
+		// TODO: put it own file, use regular benchmarking suite
+		//
+		// indexWithRandomPackages := func(n int) *ManualIndex {
+		// 	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+		// 	packages := make([]string, n)
+		//
+		// 	for i := 0; i < n; i++ {
+		// 		pkgLength := rand.Intn(9) + 1
+		// 		pkg := make([]rune, pkgLength)
+		// 		for i := range pkg {
+		// 			pkg[i] = letters[rand.Intn(len(letters))]
+		// 		}
+		// 		packages[i] = "github.org/" + string(pkg)
+		// 	}
+		//
+		// 	result := &ManualIndex{}
+		// 	err := result.Add(packages...)
+		// 	if err != nil {
+		// 		panic(err)
+		// 	}
+		// 	return result
+		// }
+		//
+		// measureSearches := func(subject *ManualIndex) {
+		// 	Measure("empty search", func(b Benchmarker) {
+		// 		b.Time("runtime", func() {
+		// 			_, err := subject.Search("")
+		// 			Expect(err).To(BeNil())
+		// 		})
+		// 	}, 1000)
+		//
+		// 	Measure("query with many matches", func(b Benchmarker) {
+		// 		b.Time("runtime", func() {
+		// 			_, err := subject.Search("github.org")
+		// 			Expect(err).To(BeNil())
+		// 		})
+		// 	}, 1000)
+		//
+		// 	Measure("query with fewer matches", func(b Benchmarker) {
+		// 		b.Time("runtime", func() {
+		// 			_, err := subject.Search("github.org/aa")
+		// 			Expect(err).To(BeNil())
+		// 		})
+		// 	}, 1000)
+		// }
+		//
+		// Context("with 100 entries", func() {
+		// 	measureSearches(indexWithRandomPackages(100))
+		// })
+		//
+		// Context("with 1000 entries", func() {
+		// 	measureSearches(indexWithRandomPackages(1000))
+		// })
 	})
 
 })

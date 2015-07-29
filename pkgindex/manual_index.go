@@ -1,27 +1,42 @@
 package pkgindex
 
 import (
+	"bytes"
+	"fmt"
 	"index/suffixarray"
-	"strings"
 )
 
 // ManualIndex represents an index of manually added packages.  Calling "Add"
 type ManualIndex struct {
-	packages []string
+	packages map[string]bool
 	index    *suffixarray.Index
 }
 
 // Add appends the provided packages onto the index and triggers a re-index.
 func (idx *ManualIndex) Add(packages ...string) error {
-	idx.packages = append(idx.packages, packages...)
+	if idx.packages == nil {
+		idx.packages = map[string]bool{}
+	}
+
+	for _, pkg := range packages {
+		idx.packages[pkg] = true
+	}
 	return idx.Index()
 }
 
 // Index builds a new suffixarray for the package names previously registered
 // with this instance.
 func (idx *ManualIndex) Index() error {
-	var input = "\x00" + strings.Join(idx.packages, "\x00")
-	idx.index = suffixarray.New([]byte(input))
+	var buf bytes.Buffer
+
+	for pkg := range idx.packages {
+		_, err := fmt.Fprintf(&buf, "\x00%s", pkg)
+		if err != nil {
+			return err
+		}
+	}
+
+	idx.index = suffixarray.New(buf.Bytes())
 	return nil
 }
 
