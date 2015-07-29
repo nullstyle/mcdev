@@ -1,6 +1,8 @@
 package pkgindex
 
 import (
+	"math/rand"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -79,6 +81,72 @@ var _ = Describe("ManualIndex", func() {
 				Expect(results).To(HaveLen(1))
 				Expect(results).To(ContainElement("golang.org/x/net/context"))
 			})
+
+			Measure("search time", func(b Benchmarker) {
+				_ = b.Time("runtime", func() {
+					_, err := subject.Search("golang")
+					Expect(err).To(BeNil())
+				})
+
+				// Expect(runtime.Seconds()).To(BeNumerically("<", 0.1))
+
+			}, 1000)
+		})
+
+		indexWithRandomPackages := func(n int) *ManualIndex {
+			letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+			packages := make([]string, n)
+
+			for i := 0; i < n; i++ {
+				pkgLength := rand.Intn(9) + 1
+				pkg := make([]rune, pkgLength)
+				for i := range pkg {
+					pkg[i] = letters[rand.Intn(len(letters))]
+				}
+				packages[i] = "github.org/" + string(pkg)
+			}
+
+			result := &ManualIndex{}
+			err := result.Add(packages...)
+			if err != nil {
+				panic(err)
+			}
+			return result
+		}
+
+		measureSearches := func(subject *ManualIndex) {
+			Measure("empty search", func(b Benchmarker) {
+				b.Time("runtime", func() {
+					_, err := subject.Search("")
+					Expect(err).To(BeNil())
+				})
+			}, 1000)
+
+			Measure("query with many matches", func(b Benchmarker) {
+				b.Time("runtime", func() {
+					_, err := subject.Search("github.org")
+					Expect(err).To(BeNil())
+				})
+			}, 1000)
+
+			Measure("query with fewer matches", func(b Benchmarker) {
+				b.Time("runtime", func() {
+					_, err := subject.Search("github.org/aa")
+					Expect(err).To(BeNil())
+				})
+			}, 1000)
+		}
+
+		Context("with 100 entries", func() {
+			measureSearches(indexWithRandomPackages(100))
+		})
+
+		Context("with 1000 entries", func() {
+			measureSearches(indexWithRandomPackages(1000))
+		})
+
+		Context("with 10000 entries", func() {
+			measureSearches(indexWithRandomPackages(10000))
 		})
 	})
 

@@ -1,7 +1,6 @@
 package pkgindex
 
 import (
-	"log"
 	"regexp"
 	"strings"
 )
@@ -14,15 +13,18 @@ const notEnd = "[^\x00]*?"
 // matching behavior provided by this package.
 func searchToRegex(search string) (*regexp.Regexp, error) {
 	letters := strings.Split(search, "")
+	escaped := make([]string, len(letters))
+	for i, l := range letters {
+		escaped[i] = regexp.QuoteMeta(l)
+	}
+
 	expr := strings.Join([]string{
 		"\x00",
 		notEnd,
-		strings.Join(letters, notEnd),
+		strings.Join(escaped, notEnd),
 		notEnd,
 		"[^\x00]*",
 	}, "")
-
-	log.Println(expr)
 
 	return regexp.Compile(expr)
 }
