@@ -169,12 +169,18 @@ func (w *Watcher) processGoEvent(event fsnotify.Event) error {
 }
 
 func (w *Watcher) processDirEvent(event fsnotify.Event) error {
+	// if not a create event, return
 	if event.Op&fsnotify.Create != fsnotify.Create {
 		return nil
 	}
 
 	stat, err := os.Stat(event.Name)
+	if os.IsNotExist(err) {
+		return nil
+	}
+
 	if err != nil {
+		log.Printf("failed stating: %s", event.Name)
 		return err
 	}
 
