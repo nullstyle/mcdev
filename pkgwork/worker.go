@@ -53,9 +53,8 @@ func (w *Worker) Run(pkg string) error {
 }
 
 func (w *Worker) run(pkg string) error {
-	log.Printf("starting: %s", pkg)
-	defer log.Printf("done: %s", pkg)
-	return w.Fn(pkg)
+	err := w.Fn(pkg)
+	return err
 }
 
 func (w *Worker) finish(pkg string) {

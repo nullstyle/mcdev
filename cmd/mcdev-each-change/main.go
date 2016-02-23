@@ -20,12 +20,14 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"os/signal"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/nullstyle/mcdev/cmdtmpl"
 	"github.com/nullstyle/mcdev/dotenv"
 	"github.com/nullstyle/mcdev/pkgwatch"
@@ -96,6 +98,7 @@ func main() {
 func execute(pkg string) error {
 	err := cmd.Run(struct{ Pkg string }{pkg})
 	if err == nil {
+		color.Green("GOOD: %s", pkg)
 		return nil
 	}
 
@@ -104,6 +107,7 @@ func execute(pkg string) error {
 		return err
 	}
 
-	log.Println(eerr)
+	color.Red("FAIL: %s", pkg)
+	fmt.Println(eerr)
 	return nil
 }
